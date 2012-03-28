@@ -524,7 +524,7 @@ Include the file in your program:
 
  use BusinessStripe;
  my $stripe = BusinessStripe->new(
-	-api_key => 'c6EiNIusHip8x5hkdIjtur7KNUA3TTpE'
+     -api_key => 'c6EiNIusHip8x5hkdIjtur7KNUA3TTpE'
  );
  $stripe->charges_list;
 
