@@ -1,10 +1,9 @@
-# Business-Stripe
+Business-Stripe
 
 Provides commonly used Perl bindings for Stripe payment system.
 
-## INSTALLATION
 
-### Make
+INSTALLATION
 
 To install this module, run the following commands:
 
@@ -13,16 +12,10 @@ To install this module, run the following commands:
     make test
     make install
 
-### Use CPAN
-
-    cpan -i Business::Stripe
-
-### Single file
-
-You can also download `Stripe.pm` and include it as part of your distribution.
+You can also download Stripe.pm and include it as part of your distribution.
 
 
-## SUPPORT AND DOCUMENTATION
+SUPPORT AND DOCUMENTATION
 
 After installing, you can find documentation for this module with the
 perldoc command.
@@ -30,7 +23,7 @@ perldoc command.
     perldoc Business::Stripe
 
 
-## LICENSE AND COPYRIGHT
+LICENSE AND COPYRIGHT
 
 Copyright (C) 2012 Paul Pham. All Rights Reserved.
 
