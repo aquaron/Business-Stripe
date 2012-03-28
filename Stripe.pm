@@ -8,7 +8,7 @@ use LWP::UserAgent;
 use HTTP::Request::Common qw/DELETE GET POST/;
 use MIME::Base64;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use constant URL => 'https://api.stripe.com/v1/';
 
@@ -36,7 +36,7 @@ Provides common bindings for Stripe payment system.
 Any API calls that do not have bindings can be access through the
 generic C<api> method.
 
-=head2 Public methods
+=head2 Methods
 
 =head3 new (I<{options}>)
 
@@ -58,7 +58,7 @@ sub new {
 =head3 api (I<method>,I<path>,I<params,...>)
 
 Generic function that sends requests to Stripe.
-Check Stripe's API documentation for specific calls.
+Check Stripe API Reference L<https://stripe.com/docs/api> for specific calls.
 
 Create a token:
 
@@ -99,8 +99,8 @@ of key/value pairs.
 
 All actions can be performed by using only this method.
 The two set of functions C<charges> and C<customers> provided
-in this package is available for functions that are used heavily by
-most programs.
+in this package are made available for functions that are used frequently
+in common implementations.
 
 =cut
 
@@ -130,7 +130,7 @@ sub api {
 
 =head3 error (I<void>)
 
-Methods returns C<0> when encounter error conditions.
+Method returns C<0> when encounter error conditions.
 The JSON object returned by Stripe can be retrieved via this method.
 
  print $stripe->error->{message}, "\n";
@@ -157,7 +157,12 @@ sub success {
 	return $self->{-success};
 }
 
+
+
 =head2 Charges
+
+Set of methods that handle credit/debit card such as charging a card,
+refund, retrieve specifc charge and list charges.
 
 =head3 charges_create (I<{params}>)
 
@@ -165,7 +170,7 @@ Charge the credit card.
 
 =head4 parameters
 
-Assumes, currency is in C<usd>. Uses token from Stripe.js.
+Assumes currency in C<usd>. Uses token from Stripe.js.
 
  $stripe->charges(
     amount => 10,
@@ -177,7 +182,7 @@ Assumes, currency is in C<usd>. Uses token from Stripe.js.
 
 =item amount
 
-Positive integer larger than C<.5>.
+Positive integer larger than C<50> (amount is specified in cents).
 
 =item currency
 
@@ -201,8 +206,8 @@ Descriptive text identifying the charge (recommend using customer's email).
 
 =head4 returns
 
-Returns the C<id> if success (check C<result> for JSON object).
-If error (use C<error> for JSON object) returns C<undef>.
+Returns the C<id> if success (check C<success> for JSON object).
+If error (use C<error> for JSON object) returns C<0>.
 
 =cut
 
@@ -217,8 +222,7 @@ sub charges_create {
 
 =head3 charges_retrieve (I<id>)
 
-Takes the C<id> value returned by successful this method
-yields data about the charge.
+Takes the charge C<id> value and yields data about the charge.
 
  $stripe->charges_retrieve('ch_uxLBSIZB8azrSr');
 
@@ -231,7 +235,7 @@ sub charges_retrieve {
 
 =head3 charges_refund (I<id>,[I<amount>])
 
-Refund an C<amount> (or if omitted, full refund) to the charge C<id>.
+Refund a specific C<amount> (or if omitted, full refund) to the charge C<id>.
 C<amount> is in cents.
 
  ### refunds full amount
@@ -264,8 +268,7 @@ List all the charges for a particular C<customer> or list everything.
 
 =item count
 
-Optional number of records to return.
-Defaults to C<10>.
+Optional number of records to return.  Defaults to C<10>.
 
 =item offset
 
@@ -294,6 +297,9 @@ sub charges_list {
 
 
 =head2 Customers
+
+Multiple charges associated to a customer. By creating a customer,
+you don't have to ask for credit card information every charge.
 
 =head3 customers_create (I<{params}>)
 
@@ -341,7 +347,7 @@ Optional description.
 
 =head4 returns
 
-Returns customer's ID if succeeded.
+Returns customer's ID if successful.
 
 =cut
 
@@ -404,8 +410,7 @@ List all customers.
 
 =item count
 
-Optional number of records to return.
-Defaults to C<10>.
+Optional number of records to return. Defaults to C<10>.
 
 =item offset
 
@@ -423,11 +428,10 @@ sub customers_list {
 	return $self->_compose('customers?'.$qs);
 }
 
-=head2 Helper methods
 
-=head3 _init (I<void>)
 
-Initializes the package and sets default values.
+
+=head2 Helper Methods
 
 =cut
 
@@ -495,6 +499,35 @@ sub _compose {
 	return 0;
 }
 
+=head1 SEE ALSO
+
+Stripe.js Documentation L<https://stripe.com/docs/stripe.js>.
+
+Stripe Full API Reference L<https://stripe.com/docs/api>.
+
+Full featured implementation by Luke Closs L<Net::Stripe>.
+
+=head1 SINGLE FILE INSTALLATION
+
+This module is implemented to as a single-file package.
+If you don't want to use the CPAN distribution, you can download C<Stripe.pm>
+from the root directory and renamed it to C<BusinessStripe.pm>:
+
+ mv Stripe.pm BusinessStripe.pm
+
+Edit C<BusinessStripe.pm> and remove the C<::> between the package name on
+the first line to:
+
+ package BusinessStripe;
+
+Include the file in your program:
+
+ use BusinessStripe;
+ my $stripe = BusinessStripe->new(
+	-api_key => 'c6EiNIusHip8x5hkdIjtur7KNUA3TTpE'
+ );
+ $stripe->charges_list;
+
 =head1 HISTORY
 
 =over 3
@@ -502,6 +535,10 @@ sub _compose {
 =item 20120327
 
 v0.01 Initial release
+
+=item 20120328
+
+v0.02 Revised documentations, add README so tests won't fail.
 
 =back
 
@@ -511,7 +548,7 @@ Paul Pham (@phamnp)
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2012 Paul Pham. All Rights Reserved.
+Copyright (C) 2012 Aquaron. All Rights Reserved.
 
 This program and library is free software; 
 you can redistribute it and/or modify it under the same terms as Perl itself.
