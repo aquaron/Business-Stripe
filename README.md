@@ -4,12 +4,22 @@ Provides commonly used Perl bindings for Stripe payment system.
 
 ## INSTALLATION
 
+### Make
+
 To install this module, run the following commands:
 
     perl Makefile.PL
     make
     make test
     make install
+
+### Use CPAN
+
+    cpan -i Business::Stripe
+
+### Single file
+
+You can also download `Stripe.pm` and include it as part of your distribution.
 
 
 ## SUPPORT AND DOCUMENTATION
