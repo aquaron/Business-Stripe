@@ -7,9 +7,9 @@ Provides commonly used Perl bindings for Stripe payment system.
 To install this module, run the following commands:
 
     perl Makefile.PL
-	make
-	make test
-	make install
+    make
+    make test
+    make install
 
 
 ## SUPPORT AND DOCUMENTATION
