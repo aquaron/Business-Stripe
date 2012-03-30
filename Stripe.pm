@@ -18,7 +18,7 @@ Business::Stripe - Interface for Stripe payment system.
 
 =head1 SYNOPSIS
 
- my $stripe = StripeLite->new(
+ my $stripe = Business::Stripe->new(
     -api_key => 'c6EiNIusHip8x5hkdIjtur7KNUA3TTpE'
  );
 
