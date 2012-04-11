@@ -8,7 +8,7 @@ use LWP::UserAgent;
 use HTTP::Request::Common qw/DELETE GET POST/;
 use MIME::Base64;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use constant URL => 'https://api.stripe.com/v1/';
 
@@ -55,14 +55,15 @@ sub new {
 	return $self;
 }
 
-=head3 api (I<method>,I<path>,I<params,...>)
+=head3 api (I<method>, I<path>, I<params,...>)
 
 Generic function that sends requests to Stripe.
 Check Stripe API Reference L<https://stripe.com/docs/api> for specific calls.
 
-Create a token:
+Assuming you're not using Stripe.js to generate a token given the card
+information, you can do that using this call:
 
- $stripe->api('post', 'tokens', 
+ my $token = $stripe->api('post', 'tokens', 
      'card[number]' => '4242424242424242',
      'card[exp_month]' => 12,
      'card[exp_year]' => 2012,
@@ -70,14 +71,30 @@ Create a token:
      'currency' => 'usd'
  );
 
-List charges:
+Let's create a new plan to subscribe the customer to:
 
- $stripe->api('get', 'charges', count => 5, offset => 0);
+ $stripe->api('post', 'plans',
+     amount => 500,
+     id => 'cone',
+     currency => 'usd',
+     interval => 'month',
+     name => 'The cone plan'
+ );
 
-Delete coupon:
+Now, let's create a C<customer> object with the above token and
+subscribe the customer to our monthly $5 ice cream C<cone> plan:
 
- $stripe->api('delete', 'coupons', '25OFF');
+ my $customer = $stripe->api('post', 'customers',
+     card => $token,
+     email => 'paul@example.com',
+     description => 'Ice creamer',
+     plan => 'cone'
+ );
 
+Customer wants to cancel the subscription:
+
+ $stripe->api('delete', "customers/$customer/subscription");
+	
 =head4 parameters
 
 =over 4
@@ -88,7 +105,8 @@ One of C<post>, C<get>, or C<delete>.
 
 =item path
 
-Either C<charges>, C<events>, etc. Check API doc for complete list.
+Either C<charges>, C<events>, C<invoices>, C<events/{ID}>, etc. 
+Check API doc for complete list.
 
 =item params
 
@@ -122,6 +140,9 @@ sub api {
 
 		return $self->_compose($path.'?'.$qs, $method);
 	} elsif (scalar @_) {
+		### allowing api('delete','plans','gold')
+		### for readability api('delete','plans/gold');
+
 		return $self->_compose($path.'/'.$_[0], $method);
 	}
 
@@ -233,7 +254,7 @@ sub charges_retrieve {
 	return $self->_compose('charges/'.$id);
 }
 
-=head3 charges_refund (I<id>,[I<amount>])
+=head3 charges_refund (I<id>, [I<amount>])
 
 Refund a specific C<amount> (or if omitted, full refund) to the charge C<id>.
 C<amount> is in cents.
@@ -369,13 +390,13 @@ sub customers_retrieve {
 	return $self->_compose('customers/'.$id);
 }
 
-=head3 customers_update (I<id>,[I<{params}>])
+=head3 customers_update (I<id>, [I<{params}>])
 
 Updates customer's information.
 
- $stripe->customers_update(
-    customer => 'cus_gpj0mzwbQKBI7c',
-    description => 'updated description'
+ $stripe->customers_update('cus_gpj0mzwbQKBI7c',
+    card => 'tok_Wzm6ewTBrkVvC3',
+    description => 'new card'
  );
 
 =cut
@@ -429,6 +450,47 @@ sub customers_list {
 }
 
 
+=head3 customers_subscribe (I<id>, I<{params}>)
+
+Subscribes a customer to a specified plan:
+
+ $stripe->customers_subscribe('cus_YrUZejr9oojQjs',
+     plan => 'basic',
+     prorate => 'false'
+ );
+
+Assuming C<basic> is a plan already created in your Stripe account.
+If the customer already subscribed to a plan, this will change the
+plan to this new one.
+
+=cut
+
+sub customers_subscribe {
+	my $self = shift;
+	my $id = shift;
+	return $self->_compose("customers/$id/subscription", @_);
+}
+
+
+=head3 customers_unsubscribe (I<id>, [I<{param}>])
+
+Unsubscribe the customer from the plan that customer is subscribing to.
+
+ $stripe->customers_unsubscribe('cus_YrUZejr9oojQjs',
+	at_period_end => 'true'
+ );
+
+=cut
+
+sub customers_unsubscribe {
+	my $self = shift;
+	my $id = shift;
+	return $self->_compose("customers/$id/subscription", 
+		'delete', @_
+	);
+}
+
+
 
 
 =head2 Helper Methods
@@ -443,7 +505,7 @@ sub _init {
 	$self->{-auth}      = 'Basic ' . encode_base64($self->{-api_key}) . ':';
 }
 
-=head3 _compose (I<resource>,[I<{params}>])
+=head3 _compose (I<resource>, [I<{params}>])
 
 Helper function takes in a resource, defined by the Stripe API doc.
 Current resources:
@@ -471,22 +533,20 @@ sub _compose {
 
 	my $ua = LWP::UserAgent->new;
 	undef my $res;
+	my $url = $self->{-url} . $resource;
 
-	if (scalar @_ >= 2) {
+	if ($_[0] and $_[0] eq 'delete') {
 		$res = $ua->request(
-			POST $self->{-url} . $resource,
-				Content => [ @_ ],
-				Authorization => $self->{-auth}
+			DELETE $url, Authorization => $self->{-auth}
 		);
-	} elsif (scalar @_ && $_[0] eq 'delete') {
+	} elsif (scalar @_ >= 2) {
 		$res = $ua->request(
-			DELETE $self->{-url} . $resource,
-				Authorization => $self->{-auth}
+			POST $url, Authorization => $self->{-auth},
+				Content => [ @_ ]
 		);
 	} else {
 		$res = $ua->request(
-			GET $self->{-url} . $resource,
-				Authorization => $self->{-auth}
+			GET $url, Authorization => $self->{-auth}
 		);
 	}
 
@@ -509,7 +569,7 @@ Full featured implementation by Luke Closs L<Net::Stripe>.
 
 =head1 SINGLE FILE INSTALLATION
 
-This module is implemented to as a single-file package.
+This module is implemented as a single-file package.
 If you don't want to use the CPAN distribution, you can download C<Stripe.pm>
 from the root directory and renamed it to C<BusinessStripe.pm>:
 
@@ -539,6 +599,11 @@ v0.01 Initial release
 =item 20120328
 
 v0.02 Revised documentations, add README so tests won't fail.
+
+=item 20120401
+
+v0.03 Update docs with better examples.
+Adds C<customers_subscribe> and C<customers_unsubscribe>.
 
 =back
 

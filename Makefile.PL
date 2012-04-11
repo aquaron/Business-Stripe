@@ -5,7 +5,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
     NAME                => 'Business::Stripe',
-    AUTHOR              => q{Paul Pham <phamknp@gmail.com>},
+    AUTHOR              => q{Paul Pham <pham@cpan.org>},
     VERSION_FROM        => 'Stripe.pm',
     ($ExtUtils::MakeMaker::VERSION >= 6.3002
       ? ('LICENSE'=> 'perl')

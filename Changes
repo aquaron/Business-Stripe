@@ -1,7 +1,13 @@
 Revision history for Business-Stripe
 
-0.01    20120327/18:24
+0.01    2012-03-27
         First version.
 
-0.02    20120328/14:00
-        Fix missing README. Update docs.
+0.02    2012-03-28
+        Fix missing README.
+        Update docs.
+
+0.03    2012-04-10
+        Add META.json.
+        Fix 'delete' bug.
+        Update docs.
