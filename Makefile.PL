@@ -18,7 +18,7 @@ WriteMakefile(
     clean               => { FILES => 'Business-Stripe-*' },
     META_MERGE          => {
         resources       => {
-            repository  => 'http://github.com/pham/Business-Stripe'
+            repository  => 'http://github.com/aquaron/Business-Stripe'
         }
     }
 );
