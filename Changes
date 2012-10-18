@@ -11,3 +11,8 @@ Revision history for Business-Stripe
         Add META.json.
         Fix 'delete' bug.
         Update docs.
+
+0.04    2012-10-18
+        Update Makefile.PL.
+		Update META.json.
+        

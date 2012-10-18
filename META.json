@@ -1,5 +1,5 @@
 {
-   "abstract" : "unknown",
+   "abstract" : "Stripe bindings for Perl",
    "author" : [
       "Paul Pham <pham@cpan.org>"
    ],
@@ -32,6 +32,10 @@
       },
       "runtime" : {
          "requires" : {
+            "HTTP::Request::Common" : 0,
+            "JSON" : 0,
+            "LWP::UserAgent" : 0,
+            "MIME::Base64" : 0,
             "Test::More" : 0
          }
       }
@@ -39,8 +43,8 @@
    "release_status" : "stable",
    "resources" : {
       "repository" : {
-         "url" : "http://github.com/pham/Business-Stripe"
+         "url" : "http://github.com/aquaron/Business-Stripe"
       }
    },
-   "version" : "0.02"
+   "version" : "0.04"
 }

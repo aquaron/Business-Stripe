@@ -8,7 +8,7 @@ use LWP::UserAgent;
 use HTTP::Request::Common qw/DELETE GET POST/;
 use MIME::Base64;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use constant URL => 'https://api.stripe.com/v1/';
 
