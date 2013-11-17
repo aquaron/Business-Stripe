@@ -63,7 +63,7 @@ Check Stripe API Reference L<https://stripe.com/docs/api> for specific calls.
 Assuming you're not using Stripe.js to generate a token given the card
 information, you can do that using this call:
 
- my $token = $stripe->api('post', 'tokens', 
+ my $token = $stripe->api('post', 'tokens',
      'card[number]' => '4242424242424242',
      'card[exp_month]' => 12,
      'card[exp_year]' => 2012,
@@ -94,7 +94,7 @@ subscribe the customer to our monthly $5 ice cream C<cone> plan:
 Customer wants to cancel the subscription:
 
  $stripe->api('delete', "customers/$customer/subscription");
-	
+
 =head4 parameters
 
 =over 4
@@ -105,7 +105,7 @@ One of C<post>, C<get>, or C<delete>.
 
 =item path
 
-Either C<charges>, C<events>, C<invoices>, C<events/{ID}>, etc. 
+Either C<charges>, C<events>, C<invoices>, C<events/{ID}>, etc.
 Check API doc for complete list.
 
 =item params
@@ -130,12 +130,12 @@ sub api {
 
 	if ($method eq 'post') {
 		return $self->_compose($path, %params);
-	} 
+	}
 
 	$method eq 'delete' or undef $method;
 
 	if (scalar @_ >= 2) {
-		my $qs = join '&', 
+		my $qs = join '&',
 			map { $_ . '=' . ($params{$_}||'') } keys %params;
 
 		return $self->_compose($path.'?'.$qs, $method);
@@ -485,7 +485,7 @@ Unsubscribe the customer from the plan that customer is subscribing to.
 sub customers_unsubscribe {
 	my $self = shift;
 	my $id = shift;
-	return $self->_compose("customers/$id/subscription", 
+	return $self->_compose("customers/$id/subscription",
 		'delete', @_
 	);
 }
@@ -526,7 +526,7 @@ sub _compose {
 	my $resource = shift;
 
 	return undef unless $self->{-auth};
-	
+
 	# reset
 	undef $self->{-success};
 	undef $self->{-error};
@@ -592,15 +592,15 @@ Include the file in your program:
 
 =over 3
 
-=item 20120327
+=item 2012-03-27
 
 v0.01 Initial release
 
-=item 20120328
+=item 2012-03-28
 
 v0.02 Revised documentations, add README so tests won't fail.
 
-=item 20120401
+=item 2012-04-01
 
 v0.03 Update docs with better examples.
 Adds C<customers_subscribe> and C<customers_unsubscribe>.
@@ -615,7 +615,7 @@ Paul Pham (@phamnp)
 
 Copyright (C) 2012 Aquaron. All Rights Reserved.
 
-This program and library is free software; 
+This program and library is free software;
 you can redistribute it and/or modify it under the same terms as Perl itself.
 
 =cut
