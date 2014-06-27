@@ -271,7 +271,7 @@ sub charges_refund {
 	my ($self,$id,$amount) = (@_);
 
 	return $self->_compose(
-		'charges/'.$id.'/refund',
+		'charges/'.$id.'/refunds',
 		$amount ? (amount => $amount) : []
 	);
 }
