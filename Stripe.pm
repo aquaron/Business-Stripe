@@ -8,7 +8,7 @@ use LWP::UserAgent;
 use HTTP::Request::Common qw/DELETE GET POST/;
 use MIME::Base64;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 use constant URL => 'https://api.stripe.com/v1/';
 
@@ -64,31 +64,30 @@ Assuming you're not using Stripe.js to generate a token given the card
 information, you can do that using this call:
 
  my $token = $stripe->api('post', 'tokens', 
-     'card[number]' => '4242424242424242',
+     'card[number]'    => '4242424242424242',
      'card[exp_month]' => 12,
-     'card[exp_year]' => 2012,
-     'card[cvc]' => 123,
-     'currency' => 'usd'
+     'card[exp_year]'  => 2012,
+     'card[cvc]'       => 123
  );
 
 Let's create a new plan to subscribe the customer to:
 
  $stripe->api('post', 'plans',
-     amount => 500,
-     id => 'cone',
-     currency => 'usd',
-     interval => 'month',
-     name => 'The cone plan'
+     amount           => 500,
+     id               => 'cone',
+     currency         => 'usd',
+     interval         => 'month',
+     name             => 'The cone plan'
  );
 
 Now, let's create a C<customer> object with the above token and
 subscribe the customer to our monthly $5 ice cream C<cone> plan:
 
  my $customer = $stripe->api('post', 'customers',
-     card => $token,
-     email => 'paul@example.com',
-     description => 'Ice creamer',
-     plan => 'cone'
+     card            => $token,
+     email           => 'paul@example.com',
+     description     => 'Ice creamer',
+     plan            => 'cone'
  );
 
 Customer wants to cancel the subscription:
@@ -592,18 +591,27 @@ Include the file in your program:
 
 =over 3
 
-=item 20120327
+=item 2012-03-27
 
 v0.01 Initial release
 
-=item 20120328
+=item 2012-03-28
 
 v0.02 Revised documentations, add README so tests won't fail.
 
-=item 20120401
+=item 2012-04-01
 
 v0.03 Update docs with better examples.
-Adds C<customers_subscribe> and C<customers_unsubscribe>.
+Added C<customers_subscribe> and C<customers_unsubscribe>.
+
+=item 2012-10-18
+
+v0.04 Add dependencies to META.json and Makefile.PL.
+
+=item 2015-11-16
+
+v0.05 Fix POD errors.
+Removed errneous C<currency> from create tokens example.
 
 =back
 
@@ -613,7 +621,7 @@ Paul Pham (@phamnp)
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2012 Aquaron. All Rights Reserved.
+Copyright (C) 2015 Aquaron. All Rights Reserved.
 
 This program and library is free software; 
 you can redistribute it and/or modify it under the same terms as Perl itself.

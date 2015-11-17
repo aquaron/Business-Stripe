@@ -16,3 +16,6 @@ Revision history for Business-Stripe
         Update Makefile.PL.
 		Update META.json.
         
+0.05    2015-11-16
+        Fix POD documentations.
+        
