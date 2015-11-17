@@ -558,6 +558,10 @@ sub _compose {
 	return 0;
 }
 
+=head1 REPOSITORY
+
+L<https://github.com/aquaron/Business-Stripe>
+
 =head1 SEE ALSO
 
 Stripe.js Documentation L<https://stripe.com/docs/stripe.js>.
