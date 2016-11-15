@@ -19,3 +19,6 @@ Revision history for Business-Stripe
 0.05    2015-11-16
         Fix POD documentations.
         
+0.06    2016-11-14
+        Fix documentation errors.
+        Change TABs to SPACES.

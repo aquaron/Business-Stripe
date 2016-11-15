@@ -8,9 +8,9 @@ use LWP::UserAgent;
 use HTTP::Request::Common qw/DELETE GET POST/;
 use MIME::Base64;
 
-our $VERSION = '0.05';
+our $VERSION         = '0.06';
 
-use constant URL => 'https://api.stripe.com/v1/';
+use constant URL     => 'https://api.stripe.com/v1/';
 
 =head1 NAME
 
@@ -18,14 +18,14 @@ Business::Stripe - Interface for Stripe payment system.
 
 =head1 SYNOPSIS
 
- my $stripe = Business::Stripe->new(
-    -api_key => 'c6EiNIusHip8x5hkdIjtur7KNUA3TTpE'
+ my $stripe     = Business::Stripe->new(
+    -api_key         => 'c6EiNIusHip8x5hkdIjtur7KNUA3TTpE'
  );
 
  $stripe->charges_create(
-     amount => 400,
-     card => 'tok_5EuIyKyCTc0f2V',
-     description => 'Ice cream'
+     amount         => 400,
+     card           => 'tok_5EuIyKyCTc0f2V',
+     description    => 'Ice cream'
  ) and return $stripe->success;
 
  print $stripe->error->{message}, "\n";
@@ -48,11 +48,12 @@ Optional C<-url> can override default:
 =cut
 
 sub new {
-	my $class = shift;
-	my $self = { @_ };
-	bless $self, $class;
-	$self->_init;
-	return $self;
+    my $class    = shift;
+    my $self     = { @_ };
+
+    bless $self, $class;
+    $self->_init;
+    return $self;
 }
 
 =head3 api (I<method>, I<path>, I<params,...>)
@@ -93,7 +94,7 @@ subscribe the customer to our monthly $5 ice cream C<cone> plan:
 Customer wants to cancel the subscription:
 
  $stripe->api('delete', "customers/$customer/subscription");
-	
+    
 =head4 parameters
 
 =over 4
@@ -122,30 +123,31 @@ in common implementations.
 =cut
 
 sub api {
-	my $self = shift;
-	my $method = shift;
-	my $path = shift;
-	my %params = (@_);
+    my $self        = shift;
+    my $method      = shift;
+    my $path        = shift;
+    my %params      = (@_);
 
-	if ($method eq 'post') {
-		return $self->_compose($path, %params);
-	} 
+    if ($method eq 'post') {
+        return $self->_compose($path, %params);
+    } 
 
-	$method eq 'delete' or undef $method;
+    $method eq 'delete' or undef $method;
 
-	if (scalar @_ >= 2) {
-		my $qs = join '&', 
-			map { $_ . '=' . ($params{$_}||'') } keys %params;
+    if (scalar @_ >= 2) {
+        my $qs     = join '&', map { 
+            $_ . '=' . ($params{$_}||'') 
+        } keys %params;
 
-		return $self->_compose($path.'?'.$qs, $method);
-	} elsif (scalar @_) {
-		### allowing api('delete','plans','gold')
-		### for readability api('delete','plans/gold');
+        return $self->_compose($path.'?'.$qs, $method);
+    } elsif (scalar @_) {
+        ### allowing api('delete','plans','gold')
+        ### for readability api('delete','plans/gold');
 
-		return $self->_compose($path.'/'.$_[0], $method);
-	}
+        return $self->_compose($path.'/'.$_[0], $method);
+    }
 
-	$self->_compose($path, $method);
+    $self->_compose($path, $method);
 }
 
 =head3 error (I<void>)
@@ -158,8 +160,7 @@ The JSON object returned by Stripe can be retrieved via this method.
 =cut
 
 sub error {
-	my $self = shift;
-	return $self->{-error}->{error};
+    return shift->{-error}->{error};
 }
 
 =head3 success (I<void>)
@@ -173,8 +174,7 @@ this method. Specific values are defined in the Stripe API Documentation.
 =cut
 
 sub success {
-	my $self = shift;
-	return $self->{-success};
+    return shift->{-success};
 }
 
 
@@ -192,9 +192,9 @@ Charge the credit card.
 
 Assumes currency in C<usd>. Uses token from Stripe.js.
 
- $stripe->charges(
-    amount => 10,
-    card => 'tok_Wzm6ewTBrkVvC3',
+ $stripe->charges_create(
+    amount         => 10,
+    card         => 'tok_Wzm6ewTBrkVvC3',
     description => 'customer@example.com'
  );
 
@@ -232,12 +232,11 @@ If error (use C<error> for JSON object) returns C<0>.
 =cut
 
 sub charges_create {
-	my $self = shift;
-	my %param = (@_);
+    my $self             = shift;
+    my %param            = (@_);
+    $param{currency}   ||= 'usd';
 
-	$param{currency} ||= 'usd';
-
-	return $self->_compose('charges', %param);
+    return $self->_compose('charges', %param);
 }
 
 =head3 charges_retrieve (I<id>)
@@ -249,8 +248,9 @@ Takes the charge C<id> value and yields data about the charge.
 =cut
 
 sub charges_retrieve {
-	my ($self,$id) = (@_);
-	return $self->_compose('charges/'.$id);
+    my $self        = shift;
+    my $id          = shift;
+    return $self->_compose('charges/'.$id);
 }
 
 =head3 charges_refund (I<id>, [I<amount>])
@@ -267,12 +267,14 @@ C<amount> is in cents.
 =cut
 
 sub charges_refund {
-	my ($self,$id,$amount) = (@_);
+    my $self        = shift;
+    my $id          = shift;
+    my $amount      = shift;
 
-	return $self->_compose(
-		'charges/'.$id.'/refund',
-		$amount ? (amount => $amount) : []
-	);
+    return $self->_compose(
+        'charges/'.$id.'/refund',
+        $amount ? (amount => $amount) : []
+    );
 }
 
 =head3 charges_list (I<{params}>)
@@ -306,11 +308,13 @@ Optional customer's ID for filtering.
 =cut
 
 sub charges_list {
-	my $self = shift;
-	my %params = (@_);
-	my $qs = join '&', map { $_ . '=' . ($params{$_}||'') } keys %params;
+    my $self        = shift;
+    my %params      = (@_);
+    my $qs          = join '&', map { 
+        $_ . '=' . ($params{$_}||'') 
+    } keys %params;
 
-	return $self->_compose('charges?'.$qs);
+    return $self->_compose('charges?'.$qs);
 }
 
 
@@ -330,16 +334,16 @@ The customer-ID can be passed to C<charges_create>'s C<customer> parameter
 instead of C<card> so that you don't have to ask for credit card info again.
 
  ### creates the customer
- my $cid = $stripe->customers_create(
-    card => 'tok_Wzm6ewTBrkVvC3',
-    email => 'customer@example.com',
+ my $cid    = $stripe->customers_create(
+    card        => 'tok_Wzm6ewTBrkVvC3',
+    email       => 'customer@example.com',
     description => 'userid-123456'
  );
 
  ### charges the customer $5
  $cid and $stripe->charges_create(
-    customer => $cid,
-    amount => 500,
+    customer    => $cid,
+    amount      => 500,
     description => 'userid-123456 paid $5'
  );
 
@@ -372,8 +376,8 @@ Returns customer's ID if successful.
 =cut
 
 sub customers_create {
-	my $self = shift;
-	return $self->_compose('customers', @_);
+    my $self        = shift;
+    return $self->_compose('customers', @_);
 }
 
 =head3 customers_retrieve (I<id>)
@@ -385,8 +389,9 @@ Gets the customer's object.
 =cut
 
 sub customers_retrieve {
-	my ($self,$id) = (@_);
-	return $self->_compose('customers/'.$id);
+    my $self        = shift;
+    my $id          = shift;
+    return $self->_compose('customers/'.$id);
 }
 
 =head3 customers_update (I<id>, [I<{params}>])
@@ -394,15 +399,15 @@ sub customers_retrieve {
 Updates customer's information.
 
  $stripe->customers_update('cus_gpj0mzwbQKBI7c',
-    card => 'tok_Wzm6ewTBrkVvC3',
+    card        => 'tok_Wzm6ewTBrkVvC3',
     description => 'new card'
  );
 
 =cut
 
 sub customers_update {
-	my $self = shift;
-	return $self->_compose('customers/'.(shift), @_);
+    my $self        = shift;
+    return $self->_compose('customers/'.(shift), @_);
 }
 
 =head3 customers_delete (I<id>)
@@ -414,8 +419,8 @@ Deletes the customer.
 =cut
 
 sub customers_delete {
-	my $self = shift;
-	return $self->_compose('customers/'.(shift), 'delete');
+    my $self        = shift;
+    return $self->_compose('customers/'.(shift), 'delete');
 }
 
 =head3 customers_list (I<{params}>)
@@ -441,11 +446,13 @@ Optional paging marker. Defaults to C<0>.
 =cut
 
 sub customers_list {
-	my $self = shift;
-	my %params = (@_);
-	my $qs = join '&', map { $_ . '=' . ($params{$_}||'') } keys %params;
+    my $self        = shift;
+    my %params      = (@_);
+    my $qs          = join '&', map { 
+        $_ . '=' . ($params{$_}||'') 
+    } keys %params;
 
-	return $self->_compose('customers?'.$qs);
+    return $self->_compose('customers?'.$qs);
 }
 
 
@@ -454,8 +461,8 @@ sub customers_list {
 Subscribes a customer to a specified plan:
 
  $stripe->customers_subscribe('cus_YrUZejr9oojQjs',
-     plan => 'basic',
-     prorate => 'false'
+     plan       => 'basic',
+     prorate    => 'false'
  );
 
 Assuming C<basic> is a plan already created in your Stripe account.
@@ -465,9 +472,9 @@ plan to this new one.
 =cut
 
 sub customers_subscribe {
-	my $self = shift;
-	my $id = shift;
-	return $self->_compose("customers/$id/subscription", @_);
+    my $self        = shift;
+    my $id          = shift;
+    return $self->_compose("customers/$id/subscription", @_);
 }
 
 
@@ -476,17 +483,17 @@ sub customers_subscribe {
 Unsubscribe the customer from the plan that customer is subscribing to.
 
  $stripe->customers_unsubscribe('cus_YrUZejr9oojQjs',
-	at_period_end => 'true'
+    at_period_end   => 'true'
  );
 
 =cut
 
 sub customers_unsubscribe {
-	my $self = shift;
-	my $id = shift;
-	return $self->_compose("customers/$id/subscription", 
-		'delete', @_
-	);
+    my $self        = shift;
+    my $id          = shift;
+    return $self->_compose("customers/$id/subscription", 
+        'delete', @_
+    );
 }
 
 
@@ -497,11 +504,11 @@ sub customers_unsubscribe {
 =cut
 
 sub _init {
-	my $self = shift;
+    my $self = shift;
 
-	$self->{-url}     ||= URL;
-	$self->{-api_key} and
-	$self->{-auth}      = 'Basic ' . encode_base64($self->{-api_key}) . ':';
+    $self->{-url}     ||= URL;
+    $self->{-api_key} and
+    $self->{-auth}      = 'Basic ' . encode_base64($self->{-api_key}) . ':';
 }
 
 =head3 _compose (I<resource>, [I<{params}>])
@@ -521,41 +528,41 @@ Current resources:
 =cut
 
 sub _compose {
-	my $self = shift;
-	my $resource = shift;
+    my $self        = shift;
+    my $resource    = shift;
 
-	return undef unless $self->{-auth};
-	
-	# reset
-	undef $self->{-success};
-	undef $self->{-error};
+    return undef unless $self->{-auth};
+    
+    # reset
+    undef $self->{-success};
+    undef $self->{-error};
 
-	my $ua = LWP::UserAgent->new;
-	undef my $res;
-	my $url = $self->{-url} . $resource;
+    my $ua      = LWP::UserAgent->new;
+    my $res     = undef;
+    my $url     = $self->{-url} . $resource;
 
-	if ($_[0] and $_[0] eq 'delete') {
-		$res = $ua->request(
-			DELETE $url, Authorization => $self->{-auth}
-		);
-	} elsif (scalar @_ >= 2) {
-		$res = $ua->request(
-			POST $url, Authorization => $self->{-auth},
-				Content => [ @_ ]
-		);
-	} else {
-		$res = $ua->request(
-			GET $url, Authorization => $self->{-auth}
-		);
-	}
+    if ($_[0] and $_[0] eq 'delete') {
+        $res = $ua->request(
+            DELETE $url, Authorization => $self->{-auth}
+        );
+    } elsif (scalar @_ >= 2) {
+        $res    = $ua->request(
+            POST $url, Authorization => $self->{-auth},
+                Content => [ @_ ]
+        );
+    } else {
+        $res    = $ua->request(
+            GET $url, Authorization => $self->{-auth}
+        );
+    }
 
-	if ($res->is_success) {
-		$self->{-success} = decode_json($res->content);
-		return $self->{-success}->{id} || 1;
-	}
+    if ($res->is_success) {
+        $self->{-success}   = decode_json($res->content);
+        return $self->{-success}->{id} || 1;
+    }
 
-	$self->{-error} = decode_json($res->content);
-	return 0;
+    $self->{-error} = decode_json($res->content);
+    return 0;
 }
 
 =head1 REPOSITORY
@@ -617,6 +624,10 @@ v0.04 Add dependencies to META.json and Makefile.PL.
 v0.05 Fix POD errors.
 Removed errneous C<currency> from create tokens example.
 
+=item 2016-11-14
+
+v0.06 Fix documentation, change tabs to spaces instead.
+
 =back
 
 =head1 AUTHOR
@@ -625,7 +636,7 @@ Paul Pham (@phamnp)
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2015 Aquaron. All Rights Reserved.
+Copyright (C) 2016 Aquaron. All Rights Reserved.
 
 This program and library is free software; 
 you can redistribute it and/or modify it under the same terms as Perl itself.

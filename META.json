@@ -4,7 +4,7 @@
       "Paul Pham <pham@cpan.org>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "ExtUtils::MakeMaker version 6.59, CPAN::Meta::Converter version 2.112621",
+   "generated_by" : "ExtUtils::MakeMaker version 6.59, CPAN::Meta::Converter version 2.112621, CPAN::Meta::Converter version 2.142690",
    "license" : [
       "perl_5"
    ],
@@ -22,21 +22,21 @@
    "prereqs" : {
       "build" : {
          "requires" : {
-            "ExtUtils::MakeMaker" : 0
+            "ExtUtils::MakeMaker" : "0"
          }
       },
       "configure" : {
          "requires" : {
-            "ExtUtils::MakeMaker" : 0
+            "ExtUtils::MakeMaker" : "0"
          }
       },
       "runtime" : {
          "requires" : {
-            "HTTP::Request::Common" : 0,
-            "JSON" : 0,
-            "LWP::UserAgent" : 0,
-            "MIME::Base64" : 0,
-            "Test::More" : 0
+            "HTTP::Request::Common" : "0",
+            "JSON" : "0",
+            "LWP::UserAgent" : "0",
+            "MIME::Base64" : "0",
+            "Test::More" : "0"
          }
       }
    },
@@ -46,5 +46,5 @@
          "url" : "http://github.com/aquaron/Business-Stripe"
       }
    },
-   "version" : "0.05"
+   "version" : "0.06"
 }
