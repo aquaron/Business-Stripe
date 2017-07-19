@@ -538,6 +538,11 @@ sub _compose {
     undef $self->{-error};
 
     my $ua      = LWP::UserAgent->new;
+
+    if ( $self->{env_proxy} ) {
+        $ua->env_proxy();
+    }
+
     my $res     = undef;
     my $url     = $self->{-url} . $resource;
 
