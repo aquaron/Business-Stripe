@@ -599,7 +599,8 @@ Include the file in your program:
 
  use BusinessStripe;
  my $stripe = BusinessStripe->new(
-     -api_key => 'c6EiNIusHip8x5hkdIjtur7KNUA3TTpE'
+     -api_key => 'c6EiNIusHip8x5hkdIjtur7KNUA3TTpE',
+     -env_proxy => 1,
  );
  $stripe->charges_list;
 
