@@ -45,6 +45,8 @@ Optional C<-url> can override default:
 
  https://api.stripe.com/v1/
 
+Optional C<-env_proxy> to load proxy settings from environment variables
+
 =cut
 
 sub new {
@@ -539,7 +541,7 @@ sub _compose {
 
     my $ua      = LWP::UserAgent->new;
 
-    if ( $self->{env_proxy} ) {
+    if ( $self->{-env_proxy} ) {
         $ua->env_proxy();
     }
 
