@@ -42,6 +42,11 @@ generic C<api> method.
 
 Requires C<-api_key> given to you as part of your Stripe account.
 
+Optional C<-version> Sets a Stripe API version to use, overriding your
+account's default version. You can use this to test if new versions of
+the API work with your code. To support marketplaces, for instance, you
+should use at least '2014-11-05'.
+
 Optional C<-ua_args> Hashref of options that will be passed directly as
 arguments to LWP::UserAgent. Example:
 
@@ -601,6 +606,9 @@ sub _fetch_headers {
     my $self = shift;
     my %headers = ( Authorization => $self->{-auth} );
 
+    if ($self->{-version}) {
+        $headers{'Stripe-Version'} = $self->{-version};
+    }
     if ($self->{-stripe_account}) {
         # for managed 'oauth' accounts.
         # https://stripe.com/docs/connect/authentication
