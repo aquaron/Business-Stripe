@@ -45,6 +45,21 @@ Optional C<-url> can override default:
 
  https://api.stripe.com/v1/
 
+
+=head3 Managed Accounts
+
+if you use the oauth flow (managed accounts) described here:
+https://stripe.com/docs/connect/authentication
+
+use this syntax:
+
+ my $stripe     = Business::Stripe->new(
+    -stripe_account  => 'acct_xxxxxx_id',
+    -api_key         => 'PLATFORM_SECRET_KEY'
+ );
+
+pass -stripe_account=>'acct_xxxxxxx' 
+
 =cut
 
 sub new {
@@ -540,6 +555,12 @@ sub _compose {
     my $ua      = LWP::UserAgent->new;
     my $res     = undef;
     my $url     = $self->{-url} . $resource;
+
+    if ($self->{-stripe_account}) {
+        # for managed 'oauth' accounts. 
+        # https://stripe.com/docs/connect/authentication
+        $ua->default_header( 'Stripe-Account'=>$self->{-stripe_account} );
+    }
 
     if ($_[0] and $_[0] eq 'delete') {
         $res = $ua->request(
