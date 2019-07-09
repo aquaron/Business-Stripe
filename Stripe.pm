@@ -41,10 +41,10 @@ generic C<api> method.
 =head3 new (I<{options}>)
 
 Requires C<-api_key> given to you as part of your Stripe account.
+Optional C<-env_proxy> to load proxy settings from environment variables
 Optional C<-url> can override default:
 
  https://api.stripe.com/v1/
-
 
 =head3 Managed Accounts
 
@@ -79,7 +79,7 @@ Check Stripe API Reference L<https://stripe.com/docs/api> for specific calls.
 Assuming you're not using Stripe.js to generate a token given the card
 information, you can do that using this call:
 
- my $token = $stripe->api('post', 'tokens', 
+ my $token = $stripe->api('post', 'tokens',
      'card[number]'    => '4242424242424242',
      'card[exp_month]' => 12,
      'card[exp_year]'  => 2012,
@@ -109,7 +109,7 @@ subscribe the customer to our monthly $5 ice cream C<cone> plan:
 Customer wants to cancel the subscription:
 
  $stripe->api('delete', "customers/$customer/subscription");
-    
+
 =head4 parameters
 
 =over 4
@@ -120,7 +120,7 @@ One of C<post>, C<get>, or C<delete>.
 
 =item path
 
-Either C<charges>, C<events>, C<invoices>, C<events/{ID}>, etc. 
+Either C<charges>, C<events>, C<invoices>, C<events/{ID}>, etc.
 Check API doc for complete list.
 
 =item params
@@ -145,13 +145,13 @@ sub api {
 
     if ($method eq 'post') {
         return $self->_compose($path, %params);
-    } 
+    }
 
     $method eq 'delete' or undef $method;
 
     if (scalar @_ >= 2) {
-        my $qs     = join '&', map { 
-            $_ . '=' . ($params{$_}||'') 
+        my $qs     = join '&', map {
+            $_ . '=' . ($params{$_}||'')
         } keys %params;
 
         return $self->_compose($path.'?'.$qs, $method);
@@ -323,8 +323,8 @@ Optional customer's ID for filtering.
 sub charges_list {
     my $self        = shift;
     my %params      = (@_);
-    my $qs          = join '&', map { 
-        $_ . '=' . ($params{$_}||'') 
+    my $qs          = join '&', map {
+        $_ . '=' . ($params{$_}||'')
     } keys %params;
 
     return $self->_compose('charges?'.$qs);
@@ -461,8 +461,8 @@ Optional paging marker. Defaults to C<0>.
 sub customers_list {
     my $self        = shift;
     my %params      = (@_);
-    my $qs          = join '&', map { 
-        $_ . '=' . ($params{$_}||'') 
+    my $qs          = join '&', map {
+        $_ . '=' . ($params{$_}||'')
     } keys %params;
 
     return $self->_compose('customers?'.$qs);
@@ -504,7 +504,7 @@ Unsubscribe the customer from the plan that customer is subscribing to.
 sub customers_unsubscribe {
     my $self        = shift;
     my $id          = shift;
-    return $self->_compose("customers/$id/subscription", 
+    return $self->_compose("customers/$id/subscription",
         'delete', @_
     );
 }
@@ -545,12 +545,17 @@ sub _compose {
     my $resource    = shift;
 
     return undef unless $self->{-auth};
-    
+
     # reset
     undef $self->{-success};
     undef $self->{-error};
 
     my $ua      = LWP::UserAgent->new;
+
+    if ( $self->{-env_proxy} ) {
+        $ua->env_proxy();
+    }
+
     my $res     = undef;
     my $url     = $self->{-url} . $resource;
 
@@ -613,7 +618,8 @@ Include the file in your program:
 
  use BusinessStripe;
  my $stripe = BusinessStripe->new(
-     -api_key => 'c6EiNIusHip8x5hkdIjtur7KNUA3TTpE'
+     -api_key => 'c6EiNIusHip8x5hkdIjtur7KNUA3TTpE',
+     -env_proxy => 1,
  );
  $stripe->charges_list;
 
@@ -657,7 +663,7 @@ Paul Pham (@phamnp)
 
 Copyright (C) 2016 Aquaron. All Rights Reserved.
 
-This program and library is free software; 
+This program and library is free software;
 you can redistribute it and/or modify it under the same terms as Perl itself.
 
 =cut
