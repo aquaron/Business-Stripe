@@ -282,14 +282,12 @@ C<amount> is in cents.
 =cut
 
 sub charges_refund {
-    my $self        = shift;
-    my $id          = shift;
-    my $amount      = shift;
+	my ($self,$id,$amount) = (@_);
 
-    return $self->_compose(
-        'charges/'.$id.'/refund',
-        $amount ? (amount => $amount) : []
-    );
+	return $self->_compose(
+		'charges/'.$id.'/refunds',
+		$amount ? (amount => $amount) : []
+	);
 }
 
 =head3 charges_list (I<{params}>)
