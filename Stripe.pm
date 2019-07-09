@@ -41,8 +41,26 @@ generic C<api> method.
 =head3 new (I<{options}>)
 
 Requires C<-api_key> given to you as part of your Stripe account.
-Optional C<-env_proxy> to load proxy settings from environment variables
-Optional C<-url> can override default:
+
+Optional C<-ua_args> Hashref of options that will be passed directly as
+arguments to LWP::UserAgent. Example:
+
+    my $stripe = Business::Stripe->new(
+        -api_key => 'xxxxxxxxx',
+        -ua_args => {
+            timeout   => 10,
+            env_proxy => 1,
+            agent     => 'myApp',
+            ssl_opts  => { verify_hostname => 0 },
+        },
+    );
+
+Optional C<-ua> to completely override the default user agent object
+(L<LWP::UserAgent>). Note that your object I<must> accept HTTPS,
+and provide a C<request()> method accepting L<HTTP::Request> objects
+and returning L<HTTP::Response>-compatible objects.
+
+Optional C<-url> can override the default API endpoint:
 
  https://api.stripe.com/v1/
 
@@ -522,6 +540,9 @@ sub _init {
     $self->{-url}     ||= URL;
     $self->{-api_key} and
     $self->{-auth}      = 'Basic ' . encode_base64($self->{-api_key}) . ':';
+    $self->{-ua} ||= LWP::UserAgent->new(
+        (ref $self->{-ua_args} eq 'HASH' ? %{$self->{-ua_args}} : ())
+    );
 }
 
 =head3 _compose (I<resource>, [I<{params}>])
@@ -541,42 +562,29 @@ Current resources:
 =cut
 
 sub _compose {
-    my $self        = shift;
-    my $resource    = shift;
-
+    my ($self, $resource, $method, @args) = @_;
     return undef unless $self->{-auth};
 
     # reset
     undef $self->{-success};
     undef $self->{-error};
 
-    my $ua      = LWP::UserAgent->new;
-
-    if ( $self->{-env_proxy} ) {
-        $ua->env_proxy();
-    }
-
     my $res     = undef;
     my $url     = $self->{-url} . $resource;
 
-    if ($self->{-stripe_account}) {
-        # for managed 'oauth' accounts. 
-        # https://stripe.com/docs/connect/authentication
-        $ua->default_header( 'Stripe-Account'=>$self->{-stripe_account} );
-    }
+    my @headers = $self->_fetch_headers(@args);
 
-    if ($_[0] and $_[0] eq 'delete') {
-        $res = $ua->request(
-            DELETE $url, Authorization => $self->{-auth}
+    if ($method eq 'delete') {
+        $res = $self->{-ua}->request(
+            DELETE $url, @headers
         );
-    } elsif (scalar @_ >= 2) {
-        $res    = $ua->request(
-            POST $url, Authorization => $self->{-auth},
-                Content => [ @_ ]
+    } elsif (@args) {
+        $res = $self->{-ua}->request(
+            POST $url, @headers, Content => [ @args ]
         );
     } else {
-        $res    = $ua->request(
-            GET $url, Authorization => $self->{-auth}
+        $res = $self->{-ua}->request(
+            GET $url, @headers
         );
     }
 
@@ -588,6 +596,19 @@ sub _compose {
     $self->{-error} = decode_json($res->content);
     return 0;
 }
+
+sub _fetch_headers {
+    my $self = shift;
+    my %headers = ( Authorization => $self->{-auth} );
+
+    if ($self->{-stripe_account}) {
+        # for managed 'oauth' accounts.
+        # https://stripe.com/docs/connect/authentication
+        $headers{'Stripe-Account'} = $self->{-stripe_account};
+    }
+    return %headers;
+}
+
 
 =head1 REPOSITORY
 
