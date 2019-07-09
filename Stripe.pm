@@ -182,7 +182,7 @@ sub success {
 =head2 Charges
 
 Set of methods that handle credit/debit card such as charging a card,
-refund, retrieve specifc charge and list charges.
+refund, retrieve specific charge and list charges.
 
 =head3 charges_create (I<{params}>)
 
