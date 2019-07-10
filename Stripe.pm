@@ -505,7 +505,7 @@ I<< with a single billing cycle >>, pass each plan as a separate item:
 sub customers_subscribe {
     my $self        = shift;
     my $id          = shift;
-    return $self->_compose("customers/$id/subscription", @_);
+    return $self->_compose("customers/$id/subscriptions", @_);
 }
 
 
