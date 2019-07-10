@@ -22,9 +22,10 @@ Business::Stripe - Interface for Stripe payment system.
     -api_key => 'your-api-key-here',
  );
 
+ ## get the payment token from Stripe.js, then:
  $stripe->charges_create(
      amount         => 400,
-     card           => 'tok_5EuIyKyCTc0f2V',
+     source         => 'tok_5EuIyKyCTc0f2V',
      description    => 'Ice cream'
  ) and return $stripe->success;
 
