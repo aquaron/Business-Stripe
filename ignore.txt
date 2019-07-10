@@ -11,4 +11,3 @@ cover_db
 pod2htm*.tmp
 Business-Stripe-*
 .git
-README.pod

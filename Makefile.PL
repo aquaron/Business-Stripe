@@ -22,7 +22,9 @@ WriteMakefile(
     clean               => { FILES => 'Business-Stripe-*' },
     META_MERGE          => {
         resources       => {
-            repository  => 'http://github.com/aquaron/Business-Stripe'
+            repository  => 'https://github.com/aquaron/Business-Stripe',
+            license     => 'http://dev.perl.org/licenses/',
+            bugtracker  => 'https://github.com/aquaron/Business-Stripe/issues/',
         }
     }
 );
