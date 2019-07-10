@@ -6,7 +6,7 @@ use warnings;
 use JSON;
 use LWP::UserAgent;
 use HTTP::Request::Common qw/DELETE GET POST/;
-use MIME::Base64;
+use MIME::Base64 qw(encode_base64);
 
 our $VERSION         = '0.06';
 
