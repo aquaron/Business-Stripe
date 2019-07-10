@@ -541,7 +541,9 @@ sub _init {
 }
 
 sub _compose {
-    my ($self, $resource, $method, @args) = @_;
+    my $self = shift;
+    my $resource = shift;
+
     return undef unless $self->{-auth};
 
     # reset
@@ -551,15 +553,15 @@ sub _compose {
     my $res     = undef;
     my $url     = $self->{-url} . $resource;
 
-    my @headers = $self->_fetch_headers(@args);
+    my @headers = $self->_fetch_headers;
 
-    if ($method eq 'delete') {
+    if ($_[0] and $_[0] eq 'delete') {
         $res = $self->{-ua}->request(
             DELETE $url, @headers
         );
-    } elsif (@args) {
+    } elsif (scalar @_ >= 2) {
         $res = $self->{-ua}->request(
-            POST $url, @headers, Content => [ @args ]
+            POST $url, @headers, Content => [ @_ ]
         );
     } else {
         $res = $self->{-ua}->request(
