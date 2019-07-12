@@ -638,45 +638,13 @@ Include the file in your program:
  );
  $stripe->charges_list;
 
-=head1 HISTORY
-
-=over 3
-
-=item 2012-03-27
-
-v0.01 Initial release
-
-=item 2012-03-28
-
-v0.02 Revised documentations, add README so tests won't fail.
-
-=item 2012-04-01
-
-v0.03 Update docs with better examples.
-Added C<customers_subscribe> and C<customers_unsubscribe>.
-
-=item 2012-10-18
-
-v0.04 Add dependencies to META.json and Makefile.PL.
-
-=item 2015-11-16
-
-v0.05 Fix POD errors.
-Removed errneous C<currency> from create tokens example.
-
-=item 2016-11-14
-
-v0.06 Fix documentation, change tabs to spaces instead.
-
-=back
-
 =head1 AUTHOR
 
 Paul Pham (@phamnp)
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2016 Aquaron. All Rights Reserved.
+Copyright (C) 2012-2019 Aquaron. All Rights Reserved.
 
 This program and library is free software;
 you can redistribute it and/or modify it under the same terms as Perl itself.

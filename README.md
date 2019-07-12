@@ -79,7 +79,7 @@ like `BusinessStripe.pm`).
 LICENSE AND COPYRIGHT
 ---------------------
 
-Copyright (C) 2016-2019 Aquaron. All Rights Reserved.
+Copyright (C) 2012-2019 Aquaron. All Rights Reserved.
 
 This program and library is free software; 
 you can redistribute it and/or modify it under the same terms as Perl 5 itself.

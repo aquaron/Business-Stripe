@@ -1,24 +1,25 @@
 Revision history for Business-Stripe
 
-0.01    2012-03-27
-        First version.
+0.06    2016-11-14
+        Fix documentation errors.
+        Change TABs to SPACES.
 
-0.02    2012-03-28
-        Fix missing README.
-        Update docs.
-
-0.03    2012-04-10
-        Add META.json.
-        Fix 'delete' bug.
-        Update docs.
+0.05    2015-11-16
+        Fix POD documentations.
 
 0.04    2012-10-18
         Update Makefile.PL.
 		Update META.json.
-        
-0.05    2015-11-16
-        Fix POD documentations.
-        
-0.06    2016-11-14
-        Fix documentation errors.
-        Change TABs to SPACES.
+
+0.03    2012-04-10
+        - Add META.json.
+        - Fix 'delete' bug.
+        - Add 'customers_subcribe' and 'customers_unsubscribe'
+        - Update docs.
+
+0.02    2012-03-28
+        - Fix missing README.
+        - Update docs.
+
+0.01    2012-03-27
+        - Initial release.
