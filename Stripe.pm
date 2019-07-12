@@ -12,6 +12,8 @@ our $VERSION         = '0.06';
 
 use constant URL     => 'https://api.stripe.com/v1/';
 
+=encoding utf8
+
 =head1 NAME
 
 Business::Stripe - Interface for Stripe payment system.
@@ -184,18 +186,18 @@ sub api {
     my $self        = shift;
     my $method      = shift;
     my $path        = shift;
-    my %params      = (@_);
 
     if ($method eq 'post') {
-        return $self->_compose($path, %params);
+        return $self->_compose($path, @_);
     }
 
     $method eq 'delete' or undef $method;
 
     if (scalar @_ >= 2) {
+        my %params      = (@_);
         my $qs     = join '&', map {
             $_ . '=' . ($params{$_}||'')
-        } keys %params;
+        } sort keys %params;
 
         return $self->_compose($path.'?'.$qs, $method);
     } elsif (scalar @_) {
@@ -355,9 +357,9 @@ sub charges_list {
     my %params      = (@_);
     my $qs          = join '&', map {
         $_ . '=' . ($params{$_}||'')
-    } keys %params;
+    } sort keys %params;
 
-    return $self->_compose('charges?'.$qs);
+    return $self->_compose('charges' . ($qs ? "?$qs" : ''));
 }
 
 
@@ -462,9 +464,9 @@ sub customers_list {
     my %params      = (@_);
     my $qs          = join '&', map {
         $_ . '=' . ($params{$_}||'')
-    } keys %params;
+    } sort keys %params;
 
-    return $self->_compose('customers?'.$qs);
+    return $self->_compose('customers' . ($qs ? "?$qs" : ''));
 }
 
 
@@ -510,23 +512,27 @@ sub customers_subscribe {
 }
 
 
-=head3 customers_unsubscribe (I<$id>, [I<%param>])
+=head3 customers_unsubscribe (I<$id>)
 
-Unsubscribe the customer from all plans the customer is subscribing to.
+Immediately unsubscribe the customer from all currently subscribed plans.
 Useful for terminating accounts (or paid subscriptions).
 
- $stripe->customers_unsubscribe('cus_YrUZejr9oojQjs',
-    at_period_end   => 'true'
- ) or die "error unsubscribing customer: " . $stripe->error->{message};
+NOTE: As per Stripe's documentation, any pending invoice items that you’ve
+created will still be charged for at the end of the period, unless manually
+deleted. If you’ve set the subscription to cancel at the end of the period,
+any pending prorations will also be left in place and collected at the end
+of the period. But if the subscription is set to cancel immediately, pending
+prorations will be removed.
+
+ $stripe->customers_unsubscribe('cus_YrUZejr9oojQjs')
+    or die "error unsubscribing customer: " . $stripe->error->{message};
 
 =cut
 
 sub customers_unsubscribe {
     my $self        = shift;
     my $id          = shift;
-    return $self->_compose("customers/$id/subscription",
-        'delete', @_
-    );
+    return $self->_compose("customers/$id/subscriptions", 'delete');
 }
 
 
@@ -536,9 +542,12 @@ sub _init {
     $self->{-url}     ||= URL;
     $self->{-api_key} and
     $self->{-auth}      = 'Basic ' . encode_base64($self->{-api_key}) . ':';
-    $self->{-ua} ||= LWP::UserAgent->new(
-        (ref $self->{-ua_args} eq 'HASH' ? %{$self->{-ua_args}} : ())
-    );
+    if (!$self->{-ua}) {
+        $self->{-ua} = LWP::UserAgent->new(
+            (ref $self->{-ua_args} eq 'HASH' ? %{$self->{-ua_args}} : ())
+        );
+    }
+    return;
 }
 
 sub _compose {
@@ -571,7 +580,7 @@ sub _compose {
     }
 
     if ($res->is_success) {
-        $self->{-success}   = decode_json($res->content);
+        $self->{-success} = decode_json($res->content);
         return $self->{-success}->{id} || 1;
     }
 
