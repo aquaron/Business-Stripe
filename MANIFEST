@@ -5,4 +5,7 @@ MANIFEST			This list of files
 README.md
 META.json
 t/pod.t
-t/boilerplate.t
+t/00-basic.t
+t/10-api.t
+t/20-charges.t
+t/30-customers.t
