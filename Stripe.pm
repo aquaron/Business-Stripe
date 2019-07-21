@@ -569,9 +569,9 @@ sub _compose {
         $res = $self->{-ua}->request(
             DELETE $url, @headers
         );
-    } elsif (scalar @_ >= 2) {
+    } elsif (scalar @_ > 1 || (@_ == 1 && ref $_[0] eq 'ARRAY')) {
         $res = $self->{-ua}->request(
-            POST $url, @headers, Content => [ @_ ]
+            POST $url, @headers, Content => [ @_ == 1 ? @{$_[0]} : @_ ]
         );
     } else {
         $res = $self->{-ua}->request(

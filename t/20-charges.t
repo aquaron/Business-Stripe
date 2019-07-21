@@ -125,10 +125,7 @@ $stripe = Business::Stripe->new(
         content => '{}',
         request => sub {
             my ($self, $req) = @_;
-            TODO: {
-                local $TODO = "should be a POST like the partial call, but it's a GET";
-                Test::More::is($req->method, 'POST', 'charges_refund() method');
-            };
+            Test::More::is($req->method, 'POST', 'charges_refund() method');
             Test::More::is(
                 $req->uri,
                 'https://api.stripe.com/v1/charges/my_charge_id/refunds',
