@@ -1,15 +1,30 @@
 Revision history for Business-Stripe
 
+0.07    2019-07-21
+        - Pod fixes and documentation updates (GH#2,4,10,13,15: Michael
+          Stevens, Slobodan Mišković, Richard Still, Galen Charlton, garu)
+        - charges_refund() fixes (GH#3,19: ohkneebee, garu)
+        - customers_subscribe() fixes (GH#11, garu)
+        - New "-stripe_account" constructor argument allows support for
+          Managed Accounts (GH#5: Brian Horakh)
+        - New "-version" constructor argument to override your default
+          API version (GH#9, garu)
+        - New "-ua_args" constructor argument to let you customize how
+          LWP::UserAgent is built (GH#6, GH#8: Michael Shulichenko, garu)
+        - New "-ua" constructor argument to let you pass your own
+          (HTTP::Message compatible) user agent (GH#8, garu)
+        - Test coverage at 100% (GH#17: garu)
+
 0.06    2016-11-14
-        Fix documentation errors.
-        Change TABs to SPACES.
+        - Fix documentation errors.
+        - Change TABs to SPACES.
 
 0.05    2015-11-16
-        Fix POD documentations.
+        - Fix POD documentations.
 
 0.04    2012-10-18
-        Update Makefile.PL.
-		Update META.json.
+        - Update Makefile.PL.
+		- Update META.json.
 
 0.03    2012-04-10
         - Add META.json.
