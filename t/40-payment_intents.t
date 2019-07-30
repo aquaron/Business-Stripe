@@ -114,7 +114,7 @@ is_deeply $stripe->success, { answer => 42 }, 'payment_intents_retrieve() inflat
 
 
 ##################################
-### payment_intents_confirm() ###
+### payment_intents_confirm() ####
 ##################################
 $stripe = Business::Stripe->new(
     -api_key => 123,
@@ -240,9 +240,9 @@ ok $stripe->payment_intents_cancel('my_payment_intent_id'),  'payment_intents_ca
 is_deeply $stripe->success, { "test" => 1 }, 'payment_intents_cancel() inflates properly';
 
 
-######################
+##############################
 ### payment_intents_list() ###
-######################
+##############################
 $stripe = Business::Stripe->new(
     -api_key => 123,
     -ua => MockUA->new({

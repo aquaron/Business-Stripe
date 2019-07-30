@@ -147,9 +147,9 @@ is_deeply $stripe->success, { payment_method => 'pm_card_visa' }, 'setup_intents
 
 
 
-#############################
+##############################
 ### setup_intents_update() ###
-#############################
+##############################
 $stripe = Business::Stripe->new(
     -api_key => 123,
     -ua => MockUA->new({
@@ -186,7 +186,7 @@ is_deeply $stripe->success, { "test" => 1 }, 'setup_intents_update() inflates pr
 
 
 ################################
-### setup_intents_cancel() ###
+### setup_intents_cancel() #####
 ################################
 $stripe = Business::Stripe->new(
     -api_key => 123,
@@ -240,9 +240,9 @@ ok $stripe->setup_intents_cancel('my_setup_intent_id'),  'setup_intents_cancel()
 is_deeply $stripe->success, { "test" => 1 }, 'setup_intents_cancel() inflates properly';
 
 
-######################
+############################
 ### setup_intents_list() ###
-######################
+############################
 $stripe = Business::Stripe->new(
     -api_key => 123,
     -ua => MockUA->new({
