@@ -398,10 +398,10 @@ C<currency> is required, but will default to usd in this module.
 
 sub payment_intents_create {
     my $self             = shift;
-    my %param            = (@_);
-    $param{currency}   ||= 'usd';
+    my %params           = (@_);
+    $params{currency}  ||= 'usd';
 
-    return $self->_compose('payment_intents', %param);
+    return $self->_compose('payment_intents', %params);
 }
 
 =head3 payment_intents_retrieve (I<$id>)
@@ -414,7 +414,12 @@ sub payment_intents_create {
 sub payment_intents_retrieve {
     my $self        = shift;
     my $id          = shift;
-    return $self->_compose('payment_intents/'.$id);
+    my %params      = (@_);
+    my $qs          = join '&', map {
+        $_ . '=' . ($params{$_}||'')
+    } sort keys %params;
+
+    return $self->_compose('payment_intents/'.$id . ($qs ? "?$qs" : ''));
 }
 
 
@@ -430,8 +435,8 @@ Takes the payment intent value and update it with some new information
 sub payment_intents_update {
     my $self             = shift;
     my $id               = shift;
-    my %param            = (@_);
-    return $self->_compose('payment_intents/'.$id, %param);
+    my %params           = (@_);
+    return $self->_compose('payment_intents/'.$id, %params);
 }
 
 =head3 payment_intents_confirm (I<%params>)
@@ -448,8 +453,11 @@ confirming, or you may want to attach a payment_method for example.
 sub payment_intents_confirm {
     my $self             = shift;
     my $id               = shift;
-    my %param            = (@_);
-    return $self->_compose('payment_intents/'.$id.'/confirm', @_ ? %param : 'post');
+    my %params           = (@_);
+    return $self->_compose(
+           'payment_intents/'.$id.'/confirm', 
+           @_ ? %params : []
+    );
 }
 
 =head3 payment_intents_capture (I<%params>)
@@ -466,8 +474,11 @@ cancelled if not captured within 7 days.
 sub payment_intents_capture {
     my $self             = shift;
     my $id               = shift;
-    my %param            = (@_);
-    return $self->_compose('payment_intents/'.$id.'/capture', @_ ? %param : 'post');
+    my %params           = (@_);
+    return $self->_compose(
+           'payment_intents/'.$id.'/capture', 
+           @_ ? %params : []
+    );
 }
 
 =head3 payment_intents_cancel (I<%params>)
@@ -482,8 +493,11 @@ for the cancellation if wanted.
 sub payment_intents_cancel {
     my $self             = shift;
     my $id               = shift;
-    my %param            = (@_);
-    return $self->_compose('payment_intents/'.$id.'/cancel', @_ ? %param : 'post');
+    my %params           = (@_);
+    return $self->_compose(
+           'payment_intents/'.$id.'/cancel', 
+           @_ ? %params : []
+    );
 }
 
 =head3 payment_intents_list (I<%params>)
@@ -532,8 +546,8 @@ credentials for later use.
 
 sub setup_intents_create {
     my $self             = shift;
-    my %param            = (@_);
-    return $self->_compose('setup_intents', %param);
+    my %params           = (@_);
+    return $self->_compose('setup_intents', %params);
 }
 
 =head3 setup_intents_retrieve (I<$id>)
@@ -549,7 +563,11 @@ on L<< $stripe->success | /success >>.
 sub setup_intents_retrieve {
     my $self        = shift;
     my $id          = shift;
-    return $self->_compose('setup_intents/'.$id);
+    my %params      = (@_);
+    my $qs          = join '&', map {
+        $_ . '=' . ($params{$_}||'')
+    } sort keys %params;
+    return $self->_compose('setup_intents/'.$id . ($qs ? "?$qs" : ''));
 }
 
 =head3 setup_intents_update (I<$id>)
@@ -564,8 +582,8 @@ Update a setup intent. Returns the setup_intent object.
 sub setup_intents_update {
     my $self             = shift;
     my $id               = shift;
-    my %param            = (@_);
-    return $self->_compose('setup_intents/'.$id, %param);
+    my %params           = (@_);
+    return $self->_compose('setup_intents/'.$id, %params);
 }
 
 =head3 setup_intents_confirm (I<$id>)
@@ -580,8 +598,11 @@ required.
 sub setup_intents_confirm {
     my $self             = shift;
     my $id               = shift;
-    my %param            = (@_);
-    return $self->_compose('setup_intents/'.$id.'/confirm', @_ ? %param : 'post');
+    my %params           = (@_);
+    return $self->_compose(
+           'setup_intents/'.$id.'/confirm', 
+           @_ ? %params : []
+    );
 }
 
 =head3 setup_intents_cancel (I<$id>)
@@ -596,8 +617,11 @@ This doesn't need any params, but you can specify a cancellation_reason if wante
 sub setup_intents_cancel {
     my $self             = shift;
     my $id               = shift;
-    my %param            = (@_);
-    return $self->_compose('setup_intents/'.$id.'/cancel', @_ ? %param : 'post');
+    my %params           = (@_);
+    return $self->_compose(
+            'setup_intents/'.$id.'/cancel',
+            @_ ? %params : []
+    );
 }
 
 =head3 setup_intents_list (I<$id>)
@@ -831,11 +855,6 @@ sub _compose {
     } elsif (scalar @_ > 1 || (@_ == 1 && ref $_[0] eq 'ARRAY')) {
         $res = $self->{-ua}->request(
             POST $url, @headers, Content => [ @_ == 1 ? @{$_[0]} : @_ ]
-        );
-    # cases where we need a post but no data
-    } elsif( $_[0] and $_[0] eq 'post' ) {
-        $res = $self->{-ua}->request(
-            POST $url, @headers
         );
     } else {
         $res = $self->{-ua}->request(
