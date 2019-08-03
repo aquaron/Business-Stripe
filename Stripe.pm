@@ -244,6 +244,10 @@ sub success {
 Set of methods that handle credit/debit card such as charging a card,
 refund, retrieve specific charge and list charges.
 
+B<Note:> Charges will likely fail for new cards added if the new SCA
+applies. The flow should be switched to payment_intents (see below).
+Existing payment methods should continue to work.
+
 =head3 charges_create (I<%params>)
 
     my $success = $stripe->charges_create(
@@ -361,6 +365,285 @@ sub charges_list {
 
     return $self->_compose('charges' . ($qs ? "?$qs" : ''));
 }
+
+
+=head2 Payment Intents
+
+Set of methods that handle colling payments from a customer. These help build
+a payment flow, including possible authentication steps that may be required.
+
+Payment intents are superceding the charges api for new SCA regulations.
+
+If this is an off session payment, it may be helpful to create a setup intent
+first on a website (using stripe.js), see below.
+
+=head3 payment_intents_create (I<%params>)
+
+    my $success = $stripe->payment_intents_create(
+        customer        => '<customer_id>',
+        description     => 'A payment intent',
+        amount          => '40',
+    );
+
+Creates a payment intent. You will need to attach a payment method now, or later
+when confirming the intent (see confirm below). 
+
+C<< confirm => 'true' >> will create and confirm the intent all in the same call.
+
+C<amount> is required
+
+C<currency> is required, but will default to usd in this module.
+
+=cut
+
+sub payment_intents_create {
+    my $self             = shift;
+    my %params           = (@_);
+    $params{currency}  ||= 'usd';
+
+    return $self->_compose('payment_intents', %params);
+}
+
+=head3 payment_intents_retrieve (I<$id>)
+
+    my $payment_intents_data = $stripe->payment_intents_retrieve('pi_xxxx')
+        and $stripe->success;
+
+=cut
+
+sub payment_intents_retrieve {
+    my $self        = shift;
+    my $id          = shift;
+    my %params      = (@_);
+    my $qs          = join '&', map {
+        $_ . '=' . ($params{$_}||'')
+    } sort keys %params;
+
+    return $self->_compose('payment_intents/'.$id . ($qs ? "?$qs" : ''));
+}
+
+
+=head3 payment_intents_update (I<%params>)
+
+    my $success = $stripe->payment_intents_update( $payment_intents_id, 
+        'description' => 'An updated payments intent' );	
+
+Takes the payment intent value and update it with some new information
+
+=cut
+
+sub payment_intents_update {
+    my $self             = shift;
+    my $id               = shift;
+    my %params           = (@_);
+    return $self->_compose('payment_intents/'.$id, %params);
+}
+
+=head3 payment_intents_confirm (I<%params>)
+
+    my $success = $stripe->payment_intents_confirm( $payment_intents_id, 
+        payment_method => 'pm_card_visa' );
+    
+Confirm a payment intent. It can be used just the id and no parameters if simply
+confirming, or you may want to attach a payment_method for example.
+
+
+=cut
+
+sub payment_intents_confirm {
+    my $self             = shift;
+    my $id               = shift;
+    my %params           = (@_);
+    return $self->_compose(
+           'payment_intents/'.$id.'/confirm', 
+           @_ ? %params : []
+    );
+}
+
+=head3 payment_intents_capture (I<%params>)
+
+    my $success = $stripe->payment_intents_capture( $payment_intents_id, 
+        amount_to_capture => 10 );
+
+Capture an amount from a payment intent. Defaults to capture the full amount,
+but you can capture a smaller amount like in the example. Payment intents are
+cancelled if not captured within 7 days.
+
+=cut
+
+sub payment_intents_capture {
+    my $self             = shift;
+    my $id               = shift;
+    my %params           = (@_);
+    return $self->_compose(
+           'payment_intents/'.$id.'/capture', 
+           @_ ? %params : []
+    );
+}
+
+=head3 payment_intents_cancel (I<%params>)
+
+    my $success = $stripe->payment_intents_cancel( $payment_intents_id );
+
+Simply cancel the payment intent, params are optional, you can give it a reason
+for the cancellation if wanted.
+
+=cut
+
+sub payment_intents_cancel {
+    my $self             = shift;
+    my $id               = shift;
+    my %params           = (@_);
+    return $self->_compose(
+           'payment_intents/'.$id.'/cancel', 
+           @_ ? %params : []
+    );
+}
+
+=head3 payment_intents_list (I<%params>)
+
+    my $intent_list = $stripe->payment_intents_list( 'customer' => '<some_customer_id>' );
+
+Grab a list of the payment intents, by some field. Will return a dictionary with a C<data> 
+element, which will be an arrayref you can loop over.
+
+=cut
+
+sub payment_intents_list {
+    my $self        = shift;
+    my %params      = (@_);
+    my $qs          = join '&', map {
+        $_ . '=' . ($params{$_}||'')
+    } sort keys %params;
+
+    return $self->_compose('payment_intents' . ($qs ? "?$qs" : ''));
+}
+
+
+=head2 Setup Intents
+
+Setup Intents are useful if you want to capture off-session payments.
+For example, you may want to integrate stripe.js in the browser, get
+Stripe to capture a card for future payments. An example flow, may be 
+to create a setup intent at the back end, and pass the C<client_secret>
+it returns to the front end, to include in the stripe.js form, when
+getting Stripe to capture the card for future payments. This will help
+with the authentication later hopefully making payments more likely to 
+go through without issue.
+
+=head3 setup_intents_create (I<%params>)
+
+    my $setup_intent = $stripe->setup_intents_create(
+        customer        => '<some_customer_id',
+        description     => 'A setup intent',
+    );
+
+Create a setup intent, which can be used for setting up payment
+credentials for later use.
+
+
+=cut
+
+sub setup_intents_create {
+    my $self             = shift;
+    my %params           = (@_);
+    return $self->_compose('setup_intents', %params);
+}
+
+=head3 setup_intents_retrieve (I<$id>)
+
+    my $setup_intents_data = $stripe->setup_intents_retrieve('seti_xxxx')
+        and $stripe->success;
+
+Takes the setup intent <id> value and yields data about the intent, available
+on L<< $stripe->success | /success >>.
+
+=cut
+
+sub setup_intents_retrieve {
+    my $self        = shift;
+    my $id          = shift;
+    my %params      = (@_);
+    my $qs          = join '&', map {
+        $_ . '=' . ($params{$_}||'')
+    } sort keys %params;
+    return $self->_compose('setup_intents/'.$id . ($qs ? "?$qs" : ''));
+}
+
+=head3 setup_intents_update (I<$id>)
+
+    my $updated_intent = $stripe->setup_intents_update( $setup_intent_id, 
+        'description' => 'An updated setup intent' );
+
+Update a setup intent. Returns the setup_intent object.
+
+=cut
+
+sub setup_intents_update {
+    my $self             = shift;
+    my $id               = shift;
+    my %params           = (@_);
+    return $self->_compose('setup_intents/'.$id, %params);
+}
+
+=head3 setup_intents_confirm (I<$id>)
+
+    my $confirmed_intent = $stripe->setup_intents_confirm( $setup_intent_id );
+
+Confirm a setup intent, for example with a payment method, but parameters not 
+required.
+
+=cut
+
+sub setup_intents_confirm {
+    my $self             = shift;
+    my $id               = shift;
+    my %params           = (@_);
+    return $self->_compose(
+           'setup_intents/'.$id.'/confirm', 
+           @_ ? %params : []
+    );
+}
+
+=head3 setup_intents_cancel (I<$id>)
+
+   my $setup_intent = $stripe->setup_intents_cancel( $setup_intent_id );
+
+Cancel a setup intent. will return the intent, or an error if already cancelled.
+This doesn't need any params, but you can specify a cancellation_reason if wanted.
+
+=cut
+
+sub setup_intents_cancel {
+    my $self             = shift;
+    my $id               = shift;
+    my %params           = (@_);
+    return $self->_compose(
+            'setup_intents/'.$id.'/cancel',
+            @_ ? %params : []
+    );
+}
+
+=head3 setup_intents_list (I<$id>)
+
+    my $intents_list = $stripe->setup_intents_list( 'customer' => '<some_customer_id>' );
+
+Grab a list of setup intents, by some parameter, or no parameters to get them all. You can 
+include a C<limit> parameter if needed.
+
+=cut
+
+sub setup_intents_list {
+    my $self        = shift;
+    my %params      = (@_);
+    my $qs          = join '&', map {
+        $_ . '=' . ($params{$_}||'')
+    } sort keys %params;
+
+    return $self->_compose('setup_intents' . ($qs ? "?$qs" : ''));
+}
+
+
 
 
 =head2 Customers
