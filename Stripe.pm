@@ -8,9 +8,9 @@ use LWP::UserAgent;
 use HTTP::Request::Common qw/DELETE GET POST/;
 use MIME::Base64 qw(encode_base64);
 
-our $VERSION         = '0.07';
+our $VERSION = '0.07';
 
-use constant URL     => 'https://api.stripe.com/v1/';
+use constant URL => 'https://api.stripe.com/v1/';
 
 =encoding utf8
 
@@ -187,26 +187,50 @@ sub api {
     my $method      = shift;
     my $path        = shift;
 
+    return undef unless $self->{-auth};
+    undef $self->{-success};
+    undef $self->{-error};
+
+    my $url = $self->{-url} . $path;
+
+    ### in simple requests, we let users compose their call as
+    ### api('delete','plans','gold') or api('get', 'subscriptions', 17)
+    ### instead of api('delete', 'plans/gold') or 'subscriptions/17'.
+    ### But it only works for a single parameter.
+    if (@_ == 1) { $url .= '/' . shift }
+
+    my @params = @_;
+    my @headers = $self->_fetch_headers(\@params);
+
+    my $request;
     if ($method eq 'post') {
-        return $self->_compose($path, @_);
+        $request = POST $url, @headers, Content => \@params;
     }
-
-    $method eq 'delete' or undef $method;
-
-    if (scalar @_ >= 2) {
-        my %params      = (@_);
-        my $qs     = join '&', map {
-            $_ . '=' . ($params{$_}||'')
+    elsif ($method eq 'delete') {
+        $request = DELETE $url, @headers;
+    }
+    elsif ($method eq 'get') {
+        my %params = @params;
+        my $query = join '&', map {
+            $_ . '=' . (defined $params{$_} ? $params{$_} : '')
         } sort keys %params;
-
-        return $self->_compose($path.'?'.$qs, $method);
-    } elsif (scalar @_) {
-        ### allowing api('delete','plans','gold')
-        ### for readability api('delete','plans/gold');
-        return $self->_compose($path.'/'.$_[0], $method);
+        $url .= '?' . $query if $query;
+        $request = GET $url, @headers;
+    }
+    else {
+        warn "don't know how to handle $method";
+        return;
     }
 
-    $self->_compose($path, $method);
+    my $res = $self->{-ua}->request($request);
+
+    if ($res->is_success) {
+        $self->{-success} = decode_json($res->content);
+        return $self->{-success}->{id} || 1;
+    }
+
+    $self->{-error} = decode_json($res->content);
+    return 0;
 }
 
 =head3 error
@@ -476,7 +500,7 @@ sub payment_intents_capture {
     my $id               = shift;
     my %params           = (@_);
     return $self->_compose(
-           'payment_intents/'.$id.'/capture', 
+           'payment_intents/'.$id.'/capture',
            @_ ? %params : []
     );
 }
@@ -833,46 +857,28 @@ sub _init {
     return;
 }
 
+# _compose() was once public, we keep it now only for backwards compatibility.
+# Previous behaviour was:
+#   _compose( $somepath, 'delete' ) makes a DELETE request;
+#   _compose( $somepath, [...] ) makes a POST request;
+#   _compose( $somepath, @two_or_more ) makes a POST request;
+#   _compose( $somepath ) makes a GET request;
+#   _compose( $somepath, $single_value ) makes a GET request (and ignores $single_value);
 sub _compose {
     my $self = shift;
     my $resource = shift;
 
-    return undef unless $self->{-auth};
-
-    # reset
-    undef $self->{-success};
-    undef $self->{-error};
-
-    my $res     = undef;
-    my $url     = $self->{-url} . $resource;
-
-    my @headers = $self->_fetch_headers;
-
     if ($_[0] and $_[0] eq 'delete') {
-        $res = $self->{-ua}->request(
-            DELETE $url, @headers
-        );
+        return $self->api('delete', $resource);
     } elsif (scalar @_ > 1 || (@_ == 1 && ref $_[0] eq 'ARRAY')) {
-        $res = $self->{-ua}->request(
-            POST $url, @headers, Content => [ @_ == 1 ? @{$_[0]} : @_ ]
-        );
+        return $self->api('post', $resource, @_ == 1 ? @{$_[0]} : @_);
     } else {
-        $res = $self->{-ua}->request(
-            GET $url, @headers
-        );
+        return $self->api('get', $resource);
     }
-
-    if ($res->is_success) {
-        $self->{-success} = decode_json($res->content);
-        return $self->{-success}->{id} || 1;
-    }
-
-    $self->{-error} = decode_json($res->content);
-    return 0;
 }
 
 sub _fetch_headers {
-    my $self = shift;
+    my ($self, $params) = @_;
     my %headers = ( Authorization => $self->{-auth} );
 
     if ($self->{-version}) {
@@ -882,6 +888,37 @@ sub _fetch_headers {
         # for managed 'oauth' accounts.
         # https://stripe.com/docs/connect/authentication
         $headers{'Stripe-Account'} = $self->{-stripe_account};
+    }
+
+    # we could have just casted it to a hash, but we don't
+    # want to mess with the ordering.
+    my $i = 0;
+    while ($i < $#{$params}) {
+        my $key   = $params->[$i];
+        my $value = $params->[$i+1];
+
+        # dynamic header found (-somekey => ...)
+        if (substr($key, 0, 1) eq '-') {
+            my %header_for = (
+                '-authorization'   => 'Authorization',
+                '-auth'            => 'Authorization',
+                '-stripe_version'  => 'Stripe-Version',
+                '-version'         => 'Stripe-Version',
+                '-stripe_account'  => 'Stripe-Account',
+                '-idempotency_key' => 'Idempotency-Key',
+            );
+            if (exists $header_for{$key}) {
+                $headers{ $header_for{$key} } = $value;
+            }
+            else {
+                warn "don't know how to handle key '$key'. Ignored.";
+            }
+            # remove key from params
+            splice @$params, $i, 2;
+        }
+        else {
+            $i += 2;
+        }
     }
     return %headers;
 }
