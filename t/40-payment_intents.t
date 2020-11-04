@@ -186,6 +186,73 @@ is_deeply $stripe->success, { "test" => 1 }, 'payment_intents_update() inflates 
 
 
 ################################
+### payment_intents_capture() ###
+################################
+$stripe = Business::Stripe->new(
+    -api_key => 123,
+    -ua => MockUA->new({
+        success => 1,
+        content => '{ "test": 990 }',
+        request => sub {
+            my ($self, $req) = @_;
+            Test::More::is($req->method, 'POST', 'payment_intents_capture() method');
+            Test::More::is(
+                $req->uri,
+                'https://api.stripe.com/v1/payment_intents/my_payment_intent_id/capture',
+                'payment_intents_capture() uri'
+            );
+            my %params = map {split /=/} split /&/, $req->content;
+            Test::More::is_deeply(
+                \%params,
+                {
+                    amount_to_capture => 990,
+                },
+                'payment_intents_capture() payload with proper amount'
+            );
+            return $self;
+        },
+    }),
+);
+
+ok $stripe->payment_intents_capture('my_payment_intent_id',
+       amount_to_capture => 990,
+   ), 'payment_intents_capture() partial capture call';
+is_deeply $stripe->success, { "test" => 990 }, 'payment_intents_update() inflates properly';
+
+$stripe = Business::Stripe->new(
+    -api_key => 123,
+    -ua => MockUA->new({
+        success => 1,
+        content => '{ "test": "full"}',
+        request => sub {
+            my ($self, $req) = @_;
+            Test::More::is($req->method, 'POST', 'payment_intents_capture() method');
+            Test::More::is(
+                $req->uri,
+                'https://api.stripe.com/v1/payment_intents/my_payment_intent_id/capture',
+                'payment_intents_capture() uri'
+            );
+            my %params = map {split /=/} split /&/, $req->content;
+            Test::More::is_deeply(
+                \%params,
+                {},
+                'payment_intents_capture() payload empty on full capture'
+            );
+            return $self;
+        },
+    }),
+);
+
+ok $stripe->payment_intents_capture('my_payment_intent_id'),
+   'payment_intents_capture() partial capture call';
+is_deeply(
+    $stripe->success,
+    { "test" => "full" },
+    'payment_intents_update() inflates properly'
+);
+
+
+################################
 ### payment_intents_cancel() ###
 ################################
 $stripe = Business::Stripe->new(

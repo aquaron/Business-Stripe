@@ -3,46 +3,10 @@ use warnings;
 use Test::More;
 
 package MockUA;
-
-    sub new {
-        my ($class, $params) = @_;
-        return bless $params, $class;
-    }
-
-    sub request {
-        my ($self, $req) = @_;
-        die 'no tests available' unless exists $self->{tests}[$self->{current_test}];
-
-        my $current_test = $self->{tests}[$self->{current_test}];
-        Test::More::is(
-            $req->method,
-            $current_test->{http_method},
-            "HTTP::Request method #" . $self->{current_test}
-        );
-        Test::More::is(
-            $req->uri,
-            $current_test->{http_uri},
-            "HTTP::Request uri #" . $self->{current_test}
-        );
-        foreach my $header_key (sort keys %{$current_test->{http_headers}}) {
-            Test::More::is(
-                $req->header($header_key),
-                $current_test->{http_headers}{$header_key},
-                "HTTP::Request has proper header value for '$header_key'",
-            );
-        }
-        Test::More::is(
-            $req->content,
-            $current_test->{http_content},
-            "HTTP::Request has proper content set for test $self->{current_test}"
-        );
-
-        $self->{current_test}++;
-        return $self;
-    }
-
-    sub is_success { 1 }
-    sub content { '{}' }
+    sub new        { bless $_[1], $_[0]     }
+    sub request    { $_[0]->{request}->(@_) }
+    sub is_success { $_[0]->{success}       }
+    sub content    { $_[0]->{content}       }
 
 package main;
 
@@ -116,7 +80,24 @@ my @tests = (
             'Stripe-Account' => undef,
         },
     },
-
+    {
+        api_args => [ 'get', 'subscriptions',
+            status           => 'cancelled',
+            -idempotency_key => '111',
+            -stripe_account  => '222',
+            -authorization   => '333',
+            -stripe_version  => '444',
+        ],
+        http_method      => 'GET',
+        http_uri         => 'https://api.stripe.com/v1/subscriptions?status=cancelled',
+        http_content     => '',
+        http_headers     => {
+            'Authorization'   => 333,
+            'Stripe-Version'  => 444,
+            'Stripe-Account'  => 222,
+            'Idempotency-Key' => 111,
+        },
+    },
 );
 
 my $total_tests = 0;
@@ -126,11 +107,44 @@ foreach my $test (@tests) {
         + scalar(keys %{$test->{http_headers}})  # 1 test for each header key
         ;
 }
-plan tests => $total_tests;
+plan tests => $total_tests + 5;
 
 my $ua = MockUA->new({
     current_test => 0,
     tests        => \@tests,
+    request      => sub {
+        my ($self, $req) = @_;
+        die 'no tests available' unless exists $self->{tests}[$self->{current_test}];
+
+        my $current_test = $self->{tests}[$self->{current_test}];
+        Test::More::is(
+            $req->method,
+            $current_test->{http_method},
+            "HTTP::Request method #" . $self->{current_test}
+        );
+        Test::More::is(
+            $req->uri,
+            $current_test->{http_uri},
+            "HTTP::Request uri #" . $self->{current_test}
+        );
+        foreach my $header_key (sort keys %{$current_test->{http_headers}}) {
+            Test::More::is(
+                $req->header($header_key),
+                $current_test->{http_headers}{$header_key},
+                "HTTP::Request has proper header value for '$header_key'",
+            );
+        }
+        Test::More::is(
+            $req->content,
+            $current_test->{http_content},
+            "HTTP::Request has proper content set for test $self->{current_test}"
+        );
+
+        $self->{current_test}++;
+        return $self;
+    },
+    success => 1,
+    content => '{}',
 });
 
 my $stripe = Business::Stripe->new(
@@ -141,4 +155,40 @@ my $stripe = Business::Stripe->new(
 
 foreach my $test_number (0 .. $#tests) {
     $stripe->api(@{$tests[$test_number]{api_args}});
+}
+
+{
+    my @warnings;
+    local $SIG{__WARN__} = sub { push @warnings, @_; };
+
+    $stripe = Business::Stripe->new(
+        -auth => $rand_auth,
+        -ua   => MockUA->new({
+            request => sub { Test::More::fail('No request should be sent') },
+        }),
+    );
+    $stripe->api('put', 'bogusroute');
+    is scalar @warnings, 1, 'invalid http method triggers warning';
+    like $warnings[0], qr{don't know how to handle put}, 'warning message received';
+
+    undef @warnings;
+    $stripe = Business::Stripe->new(
+        -auth => $rand_auth,
+        -ua   => MockUA->new({
+            request => sub {
+                my ($self, $req) = @_;
+                Test::More::is($req->method, 'GET', 'proper method on invalid header key');
+                return $self;
+            },
+            success => 1,
+            content => '{}',
+        }),
+    );
+    $stripe->api('get', 'subscribers', -invalid_key => 123);
+    is scalar @warnings, 1, 'invalid http method triggers warning';
+    like(
+        $warnings[0],
+        qr{don't know how to handle key '-invalid_key'. Ignored.},
+        'warning message received'
+    );
 }
